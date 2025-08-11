@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "tm1628a.h": "c"
+        }
+    },
+    "extensions": {}
+}
