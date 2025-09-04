@@ -77,8 +77,8 @@ enum system_state{
   sys_checking,
   sys_reco_succ,
   sys_reco_fail,
-  sys_wait_rst
-
+  sys_wait_rst,
+  sys_free_sta
 };
 
 uint8_t test_buf[200];
@@ -94,24 +94,15 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  
 
-  longing_protocol_t send_info;
-
-  float distance[HC_HEAD_NUM];
-  
-
-  uint8_t ir_id[IR_HEAD_NUM][4];
-
-  uint8_t flash_test_data[] ="hello world Meng.........";
-  uint8_t flash_recv_data[30];
-
-  uint16_t crossing_cnt = 0;
+  uint8_t artifical_res;
   uint16_t local_addr,send_len,cnt;
 
-  uint8_t re_data[10];
+  
 
-  float batt_val;
+
+  
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -140,10 +131,12 @@ int main(void)
   MX_TIM4_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   ir_init();
   hc_init();
+  status_time_init();
   
 
   ringbuffer_init(&ringbuffer, rx_buff, 200);
@@ -161,32 +154,45 @@ int main(void)
   get_device_mode();
 
   // digital tube self-check
-  // tm1628a_init(0);
+  tm1628a_init(0);
   
 
   /* extern flash test */
-  m25p16_sector_erase(0,1);
-  m25p16_read_data(0, flash_recv_data, sizeof(flash_test_data));
-  emlog(LOG_DEBUG, "read flash datas: %s", flash_recv_data);
-  m25p16_write_page(0, flash_test_data, sizeof(flash_test_data));
-  m25p16_read_data(0, flash_recv_data, sizeof(flash_test_data));
-  emlog(LOG_DEBUG, "after write, read flash datas: %s", flash_recv_data);
+  m25p16_sector_erase(0,1);    // 擦写1页，必要操作
+  mylog("sizeof(config_info_1) = %d\r\n", sizeof(config_info_1));
+  m25p16_read_data(0, (uint8_t*)&config_info_1, sizeof(config_info_1));
+  print_config_info(config_info_1);
+  config_info_init(&config_info_1);
+  print_config_info(config_info_1);
+  m25p16_write_page(0, (uint8_t*)&config_info_1, sizeof(config_info_1));
+  m25p16_read_data(0, (uint8_t*)&config_info_1, sizeof(config_info_1));
+  print_config_info(config_info_1);
   
 
+  
+  if(config_info_1.connc_flag!=1)
+  {
+    config_device_mode(DHCP_MODE, TCP_MODE, CLIENT_MODE);
+    mylog("config info:\r\n");
+    query_config_info();
+  }
+  else
+  {
+    wifi_reset();
+  }
+  
+  
 
- 
-  config_device_mode(DHCP_MODE, TCP_MODE, CLIENT_MODE);
-  mylog("config info:\r\n");
-  query_config_info();
   
-  mylog("into main.\r\n");
-  
+  mylog("dist self-check.\r\n");
+  // hc_read(dist, HC_HEAD_NUM);
+  // config_info_1.device_height = (dist[0] + dist[1]) / 2; 
 
   /* 灯带测试 */
   // breatheLED(GREEN, 0, LED_TOTAL_CNT, 100);
   // ws_light_inc(NULL, 0, LED_TOTAL_CNT, GREEN, 1);
   // ws_light_shine(NULL, 50, CYAN);
-  ws_light_shine(NULL, LED_TOTAL_CNT, BLACK);
+  // ws_light_shine(NULL, LED_TOTAL_CNT, GREEN);
 
   while (1)
   {
@@ -207,11 +213,11 @@ int main(void)
     
     
     
-    /* 超声波测距测�?????? */
+    /* 超声波测距测�??????? */
 
-    hc_read(distance, HC_HEAD_NUM);
-    mylog("left distance: %.2f cm --- %.2f m, right distance: %.2f cm --- %.2f m\r\n", distance[0],(distance[0] / 100.0), distance[1], (distance[1] / 100.0));
-    // memset(distance, 0, 2);
+    // hc_read(dist, HC_HEAD_NUM);
+    // mylog("left dist: %.2f cm --- %.2f m, right dist: %.2f cm --- %.2f m\r\n", dist[0],(dist[0] / 100.0), dist[1], (dist[1] / 100.0));
+    // memset(dist, 0, 2);
 
     /* 灯带测试 */
     
@@ -222,122 +228,207 @@ int main(void)
     // batt_val = adc_get_value();
     // emlog(LOG_DEBUG, "batt val: %.2fV \r\n", batt_val);
 
-    /* 上传数据到上行端点 */
-    // distance[0] = 8.16;
-    // distance[1] = 9.86;
-
-    send_info.type = FRAME_SEND;
-    send_info.target_addr = 0xffee;
-    send_info.local_addr = local_addr;
-    send_info.cmd_seq = 1;
-    send_info.cmd = ORHC;
+    /* 上传数据到上行端�? */
     
-    float_to_uint8_t(distance, 2, re_data);
-    emlog(LOG_DEBUG, "0x%02x-0x%02x-0x%02x-0x%02x \r\n",re_data[0], re_data[1], re_data[2], re_data[3]);
-    emlog(LOG_DEBUG, "0x%02x-0x%02x-0x%02x-0x%02x \r\n",re_data[4], re_data[5], re_data[6], re_data[7]);
-
-    send_info.data_len = filler_frame_data(re_data, 2, 4, send_info.data);
-
-    
-   
-
     /* 串口2接收测试 */
-    if(rx_complt)
-    {
+  //   if(rx_complt)
+  //   {
   
-    cnt = get_used_len(&ringbuffer);
-    get_free_len(&ringbuffer);
-    read_bytes(&ringbuffer, test_buf, cnt);
-    emlog(LOG_DEBUG, "cnt= %d.\r\n", cnt);
+  //   cnt = get_used_len(&ringbuffer);
+  //   get_free_len(&ringbuffer);
+  //   read_bytes(&ringbuffer, test_buf, cnt);
+  //   emlog(LOG_DEBUG, "cnt= %d.\r\n", cnt);
     
-    if(cnt!=0)
-    {
-      emlog(LOG_DEBUG, "recv: %s", test_buf);
-      
+  //   if(cnt!=0)
+  //   {
+  //     emlog(LOG_DEBUG, "recv: %s", test_buf);
      
-      memset(test_buf, 0, sizeof(test_buf));
+  //     recv_cmd_precess(test_buf, cnt, &recv_info);
+  //     memset(test_buf, 0, sizeof(test_buf));
 
-    }
-    rx_complt = 0;
+  //   }
+  //   rx_complt = 0;
    
-  }
-  send_len = pack_frame(&send_info, test_buf);
-  send_to_wifi(test_buf, send_len);
-  memset(distance, 0, 2);
+  // }
+
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-   
+    /* 全手动控�? */
+    if(rx_complt)
+    {
+      cnt = get_used_len(&ringbuffer);
+      get_free_len(&ringbuffer);
+      read_bytes(&ringbuffer, test_buf, cnt);
+      // emlog(LOG_DEBUG, "cnt= %d.\r\n", cnt);
+      if(cnt!=0)
+      {
+        // emlog(LOG_DEBUG, "recv: %s", test_buf);
+        artifical_res = recv_cmd_precess(test_buf, cnt, &recv_info);
+        memset(test_buf, 0, sizeof(test_buf));
 
-  //   switch(current_state)
-  //   {
-  //     case sys_wait_check:    // 检测
+      }
+      rx_complt = 0;
+    }
+    
+    switch(artifical_res)
+    {
+      case OSADDS:
+        ws_light_shine(NULL, LED_TOTAL_CNT, config_info_1.cross_color);
+        tm1628a_show_count(config_info_1.curr_score,0,100,0);
+        // set_buzz(BUZZ_SINGLE, 1000);
+        break;
+
+      case OSSUBS:
+        ws_light_shine(NULL, LED_TOTAL_CNT, PURPLE);
+        tm1628a_show_count(config_info_1.curr_score,0,100,0);
+        // set_buzz(BUZZ_SINGLE, 1000);
+        break;
+
+      case OSREZS:
+        ws_light_shine(NULL, LED_TOTAL_CNT, BLACK);
+        tm1628a_show_count(config_info_1.curr_score,0,100,0);
+        // set_buzz(BUZZ_SINGLE, 2000);
+        break;
+
+      case OSWARN:
+        ws_light_shine(NULL, LED_TOTAL_CNT, GOLD);
+        tm1628a_show_count(config_info_1.curr_score,0,100,0);
+        // set_buzz(BUZZ_THREE, 500);
+        break;
         
-  //       tm1628a_show_count(crossing_cnt,0,100,1);
-  //       ws_light_shine(NULL, LED_TOTAL_CNT, RED);
-       
-  //       hc_read(distance, HC_HEAD_NUM);
-  //       // mylog("left distance: %.2f cm --- %.2f m, right distance: %.2f cm --- %.2f m\r\n", distance[0],(distance[0] / 100.0), distance[1], (distance[1] / 100.0));
+      default:
+        if(current_state == sys_wait_check)
+        {
+          ws_light_shine(NULL, LED_TOTAL_CNT, config_info_1.wait_cross);
+        }
+        tm1628a_show_count(config_info_1.curr_score,0,100,1);
+        break;
+    }
+    switch(artifical_res)
+    {
+      case 0:
+      case 1:
+        status_time_ctrl(1);
+        if(timeout_cnt >= 60 && current_state != sys_free_sta)
+        {
+          current_state = sys_free_sta;
+        }
+        
+        break;
+
+      default:
+        status_time_ctrl(0);
+        timeout_cnt = 0;
+        current_state = sys_wait_check;
+        break;
+    }
+
+    
+    if(timeout_cnt % 2 == 0 && current_state == sys_free_sta)
+    {
+      breatheLED(CYAN, 0, LED_TOTAL_CNT, 50);
+    }
+    artifical_res = 0;
+    
+    
+    
+
+    /* 自动感应+手动控制 */
+    // if(rx_complt)
+    // {
+    //   cnt = get_used_len(&ringbuffer);
+    //   get_free_len(&ringbuffer);
+    //   read_bytes(&ringbuffer, test_buf, cnt);
+    //   // emlog(LOG_DEBUG, "cnt= %d.\r\n", cnt);
+    //   if(cnt!=0)
+    //   {
+    //     // emlog(LOG_DEBUG, "recv: %s", test_buf);
+    //     recv_cmd_precess(test_buf, cnt, &recv_info);
+    //     memset(test_buf, 0, sizeof(test_buf));
+
+    //   }
+    //   rx_complt = 0;
+    // }
+
+    // switch(current_state)
+    // {
+    //   case sys_wait_check:    // �?�?
+    //     // hc_start();
+    //     tm1628a_show_count(config_info_1.curr_score,0,100,1);
+    //     ws_light_shine(NULL, LED_TOTAL_CNT, config_info_1.wait_cross);
+    //     memset(dist, 0, HC_HEAD_NUM);
+    //     hc_read(dist, HC_HEAD_NUM);
+    //     // mylog("left dist: %.2f cm --- %.2f m, right dist: %.2f cm --- %.2f m\r\n", dist[0],(dist[0] / 100.0), dist[1], (dist[1] / 100.0));
         
         
 
-  //       if(distance[0] <=3.0f || distance[1] <= 3.0f)
-  //       {
-  //         current_state = sys_checking;
-  //       }
-
-  //       memset(distance, 0, HC_HEAD_NUM);
-  //       memset(distance2, 0, HC_HEAD_NUM);
-  //       break;
+    //     // if(config_info_1.device_height - dist[0] >= config_info_1.uav_height || config_info_1.device_height - dist[1] >= config_info_1.uav_height)
+    //     if(config_info_1.device_height - dist[0] >= config_info_1.uav_height)
+    //     {
+    //       current_state = sys_checking;
+    //     }
+        
+    //     break;
       
-  //     case sys_checking:
-  //       ir_read(ir_id, IR_HEAD_NUM);
-  //       // if(ir_id[1][0]==0x00 && ir_id[1][1]==0xef && ir_id[1][2]==0x02 && ir_id[1][3]==0xfc)
-  //       if(1)
-  //       {
-  //         current_state = sys_reco_succ;
-  //         for(i=0;i<4;i++)
-  //         {
-  //           emlog(LOG_DEBUG, "CH: %d, %02x-%02x-%02x-%02x\r\n", i, ir_id[i][0], ir_id[i][1], ir_id[i][2], ir_id[i][3]);
-  //         }
+    //   case sys_checking:
+        
+    //     if(config_info_1.recog_flag)
+    //     {
+    //       memset(dist, 0, HC_HEAD_NUM);
+    //       ir_read(ir_id, IR_HEAD_NUM);
+    //       if(ir_id[1][0]==0x00 && ir_id[1][1]==0xef && ir_id[1][2]==0x02 && ir_id[1][3]==0xfc)
+    //       // if(ir_id[1][0]==0x00 && ir_id[1][1]==0xef)
+    //       {
+    //         current_state = sys_reco_succ;
+    //       }
           
-  //       }
-  //       else
-  //       {
-  //         current_state = sys_reco_fail;
-  //       }
-  //       break;
+    //     }
+    //     else
+    //     {
+    //       hc_read(dist, HC_HEAD_NUM);
+    //       // if(config_info_1.device_height - dist[0] <= 5.0f || config_info_1.device_height - dist[1] <= 5.0f)
+    //       if(config_info_1.device_height - dist[0] <= 5.0f)
+    //       {
+    //         current_state = sys_reco_succ;
+    //       }
+    //       memset(dist, 0, HC_HEAD_NUM);
+          
+    //     }
+    //     break;
 
-  //     case sys_reco_succ: 
-  //       set_buzz(BUZZ_SINGLE, 1);
-  //       ws_light_shine(NULL, LED_TOTAL_CNT, GREEN);
-  //       tm1628a_show_count(crossing_cnt++,0,100,0);
+    //   case sys_reco_succ: 
+    //     set_buzz(BUZZ_SINGLE, 1);
+    //     ws_light_shine(NULL, LED_TOTAL_CNT, config_info_1.cross_color);
         
-  //       current_state = sys_wait_rst;
-  //       break;
-
-  //     case sys_reco_fail:
-  //       current_state = sys_checking;
-  //       ws_light_shine(NULL, LED_TOTAL_CNT, BLUE);
-  //       break;
-
-  //     case sys_wait_rst:
+    //     tm1628a_show_count(config_info_1.curr_score++,0,100,0);
         
-  //       current_state = sys_wait_check;
-  //       // ws_light_shine(NULL, LED_TOTAL_CNT, RED);
-  //       batt_val = adc_get_value();
-  //       if(batt_val <= LOW_BAT_WARNING);    // 低压报警
-  //       {
-  //         // ws_light_shine(NULL, LED_TOTAL_CNT, BLACK);
-  //         // set_buzz(BUZZ_THREE, 1000);
-  //         // tm1628a_show_code(1, 100, 0);
-  //         // ws_light_shine(NULL, 3, RED);
-  //         emlog(LOG_DEBUG, "low battarry\r\n");
-  //       }
+    //     current_state = sys_wait_rst;
+    //     break;
 
-  //   }
+    //   case sys_reco_fail:
+    //     current_state = sys_checking;
+    //     ws_light_shine(NULL, LED_TOTAL_CNT, config_info_1.wait_cross);
+    //     break;
 
+    //   case sys_wait_rst:
+        
+    //     current_state = sys_wait_check;
+    //     ws_light_shine(NULL, LED_TOTAL_CNT, config_info_1.cross_color);
+        
+    //     // if(batt_val <= LOW_BAT_WARNING);    // 低压报警
+    //     // {
+    //       // ws_light_shine(NULL, LED_TOTAL_CNT, BLACK);
+    //       // set_buzz(BUZZ_THREE, 1000);
+    //       // tm1628a_show_code(1, 100, 0);
+    //       // ws_light_shine(NULL, 3, RED);
+    //       // emlog(LOG_DEBUG, "low battarry\r\n");
+    //     // }
+    //     break;
+
+    // }
+    
 
   }
   /* USER CODE END 3 */
@@ -400,8 +491,19 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-  hc_tim_over_isr(&HC_TIM);
-  ir_tim_over_isr(&IR_TIM);
+  if(htim->Instance == HC_TIM.Instance)
+  {
+    hc_tim_over_isr(&HC_TIM);
+  }
+  if(htim->Instance == IR_TIM.Instance)
+  {
+    ir_tim_over_isr(&IR_TIM);
+  }
+  if(htim->Instance == htim3.Instance)
+  {
+    status_time_over_isr(&htim3);
+  }
+  
 }
 
 

@@ -6,7 +6,11 @@
     ],
     "settings": {
         "files.associations": {
-            "tm1628a.h": "c"
+            "tm1628a.h": "c",
+            "debug_log.h": "c",
+            "config_info.h": "c",
+            "stm32f1xx_hal.h": "c",
+            "ws2812b.h": "c"
         }
     },
     "extensions": {}

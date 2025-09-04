@@ -173,6 +173,9 @@ void query_config_info(void)
     while(send_instructions(QUERY_LOCAL_PORT, NULL));
     while(send_instructions(QUERY_REMOTE_IP, NULL));
     while(send_instructions(QUERY_REMOTE_PORT, NULL));
+
+    while(send_instructions(QUSERY_TCP_S_CONN_N, NULL));
+    while(send_instructions(QUSERY_TCP_S_DISC_N, NULL));
     
     tmp=1;
     while(tmp)
@@ -236,9 +239,12 @@ uint8_t config_wifi_sta()
 
 
 /**
- * @brief 配置WiFi模块作为客户端（静态IP）
+ * @brief 配置WiFi模块模式
  * 
- * @return uint16_t 
+ * @param get_ip_mode   获取IP的方式，静态配置或动态获取
+ * @param socket_mode   socket模式，TCP 或 UDP
+ * @param termianl_mode 终端模式，client 或 server
+ * @return uint16_t     返回 0成功，1失败
  */
 uint16_t config_device_mode(get_ip_mode_t get_ip_mode, socket_mode_t socket_mode, termianl_mode_t termianl_mode)
 {
@@ -406,6 +412,7 @@ uint16_t config_device_mode(get_ip_mode_t get_ip_mode, socket_mode_t socket_mode
         tmp=send_instructions(ptr, "ok");
         if(tmp)emlog(LOG_ERROR, "client mode set error.\r\n");
         else emlog(LOG_INFO, "set client mode succ.\r\n");
+
     }
     
 
@@ -426,6 +433,36 @@ uint16_t config_device_mode(get_ip_mode_t get_ip_mode, socket_mode_t socket_mode
             else emlog(LOG_INFO, "set local port succ.\r\n");
         }
         
+        if(socket_mode == TCP_MODE)
+        {
+            tmp = 1;
+            while(tmp)
+            {
+                ptr = (char*)ins_buf;
+                memset(ptr, 0x0, sizeof(ins_buf));
+                strcpy(ptr, SET_TCP_S_CONN_N);
+                strcat(ptr, TCP_S_CONN_NODE);
+                strcat(ptr, "\r\n");
+                // emlog(LOG_DEBUG, "%s\r\n",ptr);
+                tmp = send_instructions(ptr, "ok");
+                if(tmp)emlog(LOG_ERROR, "tcp server connect node set error.\r\n");
+                else emlog(LOG_INFO, "tcp server connect node set succ.\r\n");
+            }
+            
+            tmp = 1;
+            while(tmp)
+            {
+                ptr = (char*)ins_buf;
+                memset(ptr, 0x0, sizeof(ins_buf));
+                strcpy(ptr, SET_TCP_S_DISC_N);
+                strcat(ptr, TCP_S_DISC_NODE);
+                strcat(ptr, "\r\n");
+                // emlog(LOG_DEBUG, "%s\r\n",ptr);
+                tmp = send_instructions(ptr, "ok");
+                if(tmp)emlog(LOG_ERROR, "tcp server disconnect node set error.\r\n");
+                else emlog(LOG_INFO, "tcp server disconnect node set succ.\r\n");
+            }
+        }
     }
 
     /* 提交参数 */
@@ -495,7 +532,10 @@ uint8_t set_ble_name(char* name)
 } 
 
 
-
+/**
+ * @brief 进入指令模式
+ * 
+ */
 static void into_cmd_mode(void)
 {
     HAL_GPIO_WritePin(WIFI_RST_GPIO_Port, WIFI_RST_Pin, GPIO_PIN_RESET);
@@ -507,7 +547,24 @@ static void into_cmd_mode(void)
     HAL_GPIO_WritePin(WIFI_ES0_GPIO_Port, WIFI_ES0_Pin, GPIO_PIN_SET);
 }
 
+/**
+ * @brief WiFi模块复位
+ * 
+ */
+void wifi_reset(void)
+{
+    HAL_GPIO_WritePin(WIFI_ES0_GPIO_Port, WIFI_ES0_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(WIFI_RST_GPIO_Port, WIFI_RST_Pin, GPIO_PIN_RESET);
+    HAL_Delay(1000);
+    HAL_GPIO_WritePin(WIFI_RST_GPIO_Port, WIFI_RST_Pin, GPIO_PIN_SET);
+    HAL_Delay(1000);
+}
 
+/**
+ * @brief 检测是否进入指令模式
+ * 
+ * @return uint8_t 0，成功；1，失败
+ */
 uint8_t check_is_cmd_mode()
 {
     uint8_t tmp;

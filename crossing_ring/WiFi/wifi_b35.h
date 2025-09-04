@@ -116,7 +116,14 @@ typedef struct _wifi_device_net_info_t
 #define QUERY_BLE_NAME      "at+ble_name=?\r\n"     // 查询蓝牙名字
 #define SET_BLE_NAME        "at+ble_name="
 
+// user-defined
+#define QUSERY_TCP_S_CONN_N "at+connected_node=?\r\n"  // 查询连接上TCP Server 后的提示消息
+#define SET_TCP_S_CONN_N    "at+connected_node="
+#define QUSERY_TCP_S_DISC_N "at+disconnected=?\r\n"    // 查询断开 TCP Server 后的提示消息
+#define SET_TCP_S_DISC_N    "at+disconnected_node="
 
+#define TCP_S_CONN_NODE     "connecte"
+#define TCP_S_DISC_NODE     "disconnect"
 
 extern uint8_t rx_complt;       // 在main.c中定义
 extern uint8_t rx_complt_bit_cnt;
@@ -134,5 +141,6 @@ uint8_t check_is_cmd_mode(void);
 
 uint8_t connect_state(void);
 uint16_t config_device_mode(get_ip_mode_t get_ip_mode, socket_mode_t socket_mode, termianl_mode_t termianl_mode);
+void wifi_reset(void);
 
 #endif

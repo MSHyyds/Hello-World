@@ -21,7 +21,7 @@ uint16_t get_dip_switch_addr()
 
     res |= HAL_GPIO_ReadPin(ADDR0_GPIO_Port, ADDR0_Pin);
 
-    emlog(LOG_DEBUG, "get dip switch addr: 0x%02x\r\n", res);
+    // emlog(LOG_DEBUG, "get dip switch addr: 0x%02x\r\n", res);
 
     return res;
 }
@@ -52,7 +52,7 @@ uint8_t get_device_mode(void)
 {
     uint8_t res =0;
     res = HAL_GPIO_ReadPin(SEL_MODE_GPIO_Port, SEL_MODE_Pin);
-    emlog(LOG_DEBUG, "device mode: %s\r\n", res ? "single-player mode" : "on-line mode");
+    // emlog(LOG_DEBUG, "device mode: %s\r\n", res ? "single-player mode" : "on-line mode");
     return res;
 }
 

@@ -7,7 +7,7 @@
 #define WS_TIM_CH1     TIM_CHANNEL_1
 #define WS_TIM_CH2     TIM_CHANNEL_4
 
-#define LED_TOTAL_CNT     125
+#define LED_TOTAL_CNT     100
 #define CODE_1      (64)
 #define CODE_0      (25)
 
