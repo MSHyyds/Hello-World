@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    // 新界面
+    <LinearLayout android:id="@+id/llNewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="#000">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="透传测试"
+                android:textColor="#fff"
+                android:textSize="20sp"
+                android:layout_centerInParent="true"/>
+
+            <TextView android:id="@+id/tvPeiWang"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="配置联网 >>"
+                android:textColor="#fff"
+                android:textSize="17sp"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="10dp"
+                android:layout_centerInParent="true"
+                android:visibility="visible"/>
+
+
+        </RelativeLayout>
+
+
+        <EditText
+            android:id="@+id/send_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="发送数据。。。"
+            android:inputType="text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button android:id="@+id/button_Send"
+                android:text="发送数据"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:visibility="visible"/>
+
+            <Button android:id="@+id/button_ClearLog"
+                android:text="清空Log"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:visibility="visible"
+                android:layout_marginLeft="5dp"/>
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_toLeftOf="@+id/cbAutoSend">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time(ms)："/>
+
+                <EditText android:id="@+id/edTime"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:text="100"
+                    android:hint="auto time"/>
+
+
+            </LinearLayout>
+
+            <CheckBox android:id="@+id/cbAutoSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="自动发送"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"/>
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#ccc"
+            android:layout_marginTop="5dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="5dp">
+
+            <TextView android:id="@+id/tvSendCount"
+                android:text="发送总长度：0"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <TextView android:id="@+id/tvSendSuccess"
+                android:text="成功：0"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <TextView android:id="@+id/tvSendError"
+                android:text="失败：0"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#ccc"
+            android:layout_marginTop="5dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="5dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="发送/接收格式："/>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton android:id="@+id/rbZiFu"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="字符"
+                    android:checked="true"/>
+
+                <RadioButton android:id="@+id/rbShiLiu"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="十六进制"/>
+
+            </RadioGroup>
+
+
+
+        </LinearLayout>
+
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#ccc"
+            android:layout_marginTop="5dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical">
+
+            <TextView android:id="@+id/tvReceiveCountByNotify"
+                android:text="接收总长度：0"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_toLeftOf="@+id/cbAutoSend">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="自动清理长度："/>
+
+                <EditText android:id="@+id/edClearLength"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:text="100"
+                    android:singleLine="true"
+                    android:inputType="number"
+                    android:hint="auto time"/>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#ccc"
+            android:layout_marginTop="5dp"/>
+
+        <ScrollView android:id="@+id/scrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingBottom="10dp">
+
+            <TextView android:id="@+id/tvLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines = "9999"
+                android:scrollbars = "vertical"
+                android:textSize="14sp"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:paddingBottom="10dp"/>
+
+
+        </ScrollView>
+
+
+    </LinearLayout>
+
+</LinearLayout>
